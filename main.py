@@ -175,7 +175,7 @@ print('    rounding digits=',rounding,'sample ','{:.10%}'.format(sample_value),'
 
 
 TEST0=START_DATE_SOFR_INDEX
-TEST1=TODAY # dt(2020, 9, 30) #TODAY
+TEST1=dt(2020, 9, 30) #TODAY
 TEST1prevBD=dateShift(alldf,TEST1,FOLLOWING,-1)
 
 testdates=alldf.loc[START_DATE_SOFR_INDEX:TEST1].index # accrual 
@@ -185,13 +185,7 @@ count=0;error=0;
 precision=5;  pctfmt='{:.'+'{}'.format(precision-2)+'%}'
 minimum_accruredBD=1
 
-outputfile='test.csv'
-print(outputfile)
-f=open(outputfile,"w")
-f.write(', '.join(["d0","d1","daccr","compounded","indexed"
-    ,"comp_precise"
-    ,"index_precise" \
-    ,"diff","index_d0","index_d1"])+'\n')
+
 
 results = []
 for i in range(testlen):
@@ -227,23 +221,45 @@ for i in range(testlen):
                         ])+'\n')  
             '''
 
+
 resultsdf = pd.DataFrame(results,columns = ['d0','d1','daysaccr','compounded','indexed'])
-total=len(resultsdf)
+
+outputfile='test.csv'
+print(outputfile)
+f=open(outputfile,"w")
+f.write(', '.join(["precision","min_accrued","errors","samples","error_rate"])+'\n')
 
 for precision in [ 4, 5, 6 ]:
   for min_accrued in [ 1, 21, 63, 126 ]:
-    filtered = resultsdf[(round(resultsdf['compounded'],precision)!=round(resultsdf['indexed'],precision)) & (resultsdf['daysaccr']>=min_accrued)]
-    error=len(filtered)
-    print('precision=',precision,'min_accrued=',min_accrued,'error=',error,'/',count,'=','{:.2%}'.format(error/count))
+    samples=len(resultsdf[ (resultsdf['daysaccr']>=min_accrued)] )
+    filtered = resultsdf[(round(resultsdf['compounded'],precision)!=round(resultsdf['indexed'],precision)) & \
+    (resultsdf['daysaccr']>=min_accrued)]
+    errors=len(filtered)
+    pctfmt='{:.'+'{}'.format(precision-2)+'%}'
+    print('precision=',precision,'min_accrued=',min_accrued,'error=',errors,'/', \
+          samples,'=','{:.2%}'.format(error/samples))
+    f.write(', '.join(['{}'.format(precision),'{}'.format(min_accrued),\
+                       '{}'.format(errors),'{}'.format(samples),'{:.2%}'.format(errors/samples)])+'\n')
+    #f.write(', '.join([precision,min_accrued,errors,count,float(errors/count)]+'\n'))
+
+f.close()
 
 '''
 pd.options.display.float_format = pctfmt.format
 filtered.style.format({  'd0': '{:%Y-%m-%d}',  'd1': '{:%Y-%m-%d}' }) #,  'daysaccr':'{:d}'})
-print(filtered)
+#print(filtered)
 #print(resultsdf)
+filtered.to_csv()
 
-f.write(', '.join(['count','errors','error_rate'])+'\n')
-f.write(', '.join(['{}'.format(count),'{}'.format(error),'{:.2%}'.format(error/count)])+'\n')
+
+f.write(', '.join(["d0","d1","daccr","compounded","indexed"
+    ,"comp_precise"
+    ,"index_precise" \
+    ,"diff","index_d0","index_d1"])+'\n')
+
+
+#f.write(', '.join(['count','errors','error_rate'])+'\n')
+#f.write(', '.join(['{}'.format(count),'{}'.format(error),'{:.2%}'.format(error/count)])+'\n')
 f.close()
 '''
 print("END")
