@@ -133,7 +133,7 @@ alldf['dailyAccrual']=(alldf[SOFR_ON]*alldf['days'])/(DAY_COUNT*100)+1.0
 
 
 TEST0=START_DATE_SOFR_INDEX
-TEST1=TODAY #dt(2020, 9, 30) #TODAY
+TEST1=TODAY #dt(2020, 6, 30) #TODAY
 TEST1prevBD=dateShift(alldf,TEST1,FOLLOWING,-1)
 
 testdates=alldf.loc[START_DATE_SOFR_INDEX:TEST1].index # accrual 
@@ -161,8 +161,8 @@ f.write(', '.join(["precision","min_term","max_term","errors","samples","error_r
 MAXTERM=9999
 critical_terms=np.array([1,3,6]) # months
 
-min_terms=np.round(np.append(np.append(0,critical_terms*253/12),critical_terms*253/12),0)
-max_terms=np.round(np.append(np.append(critical_terms*253/12,MAXTERM),critical_terms*253/12),0)
+min_terms=np.round(np.append(0,np.append(np.append(0,critical_terms*253/12),critical_terms*253/12)),0)
+max_terms=np.round(np.append(MAXTERM,np.append(np.append(critical_terms*253/12,MAXTERM),critical_terms*253/12)),0)
 
 for precision in [ 3, 4, 5, 6 ]:
   for (min_term,max_term) in zip(min_terms,max_terms):
@@ -182,5 +182,8 @@ for precision in [ 3, 4, 5, 6 ]:
 
 f.close()
 
+pd.options.display.float_format = '{:0.10%}'.format
+resultsdf.style.format({  'd0': '{:%Y-%m-%d}',  'd1': '{:%Y-%m-%d}' }) #,  'daysaccr':'{:d}'})
+resultsdf.to_csv(path_or_buf='allresults.csv')
 
 print("END")
