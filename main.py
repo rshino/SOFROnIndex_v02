@@ -11,6 +11,7 @@ Compile error statistics
 import numpy as np
 import pandas as pd
 import urllib.request
+import time
 from datetime import datetime as dt, timedelta,date
 from dateutil.relativedelta import relativedelta
 from bs4 import BeautifulSoup
@@ -105,6 +106,7 @@ def rateSOFRindex(alldf,d0,d1):
 
 # STEP 1. get data from Fed 
 # two queries because data ranges are different
+start = time.time()
 sofrdf=fedQuery(SOFR_ON_REQCODE,\
                 SOFR_ON,\
                 START_DATE_SOFR_ON,\
@@ -113,6 +115,8 @@ indexdf=fedQuery(SOFR_INDEX_REQCODE,\
                  SOFR_INDEX,\
                  START_DATE_SOFR_INDEX,\
                  TODAY) # SOFR Index
+end = time.time()
+print('Acquired data from www.newyorkfed.org in ','{:0.1f}'.format(end-start), ' seconds.')
 indexlen=len(indexdf)
 # combine into single series
 alldf = pd.concat([sofrdf,indexdf],axis='columns',\
@@ -152,6 +156,8 @@ if(indexlen-testlen>0):
         '  Doing so may dramatically increase run times'
        )
 results = []
+start = time.time()
+
 for i in range(testlen):
   d0=testdates[i]
   for j in range(i+1,testlen):
@@ -160,6 +166,9 @@ for i in range(testlen):
     rate_index=rateSOFRindex(alldf,d0,d1)
     rows = [d0,d1,(d1-d0).days,rate_compounded,rate_index]
     results.append(rows)
+    
+end = time.time()
+print('Calculated ', len(results),' accruals in ','{:0.1f}'.format(end-start),' seconds')
 
 resultsdf = pd.DataFrame(results,columns = \
                          ['d0','d1','daysaccr','compounded','indexed'])
