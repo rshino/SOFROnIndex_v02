@@ -201,8 +201,8 @@ for precision in [ 3, 4, 5, 6 ]:
 #f.close()
 
 summarydf = pd.DataFrame(summary,columns = \
-                         ["precision","min_term","max_term","errors","samples"])
-summarydf['errorrate']=summarydf["errors"]/summarydf["samples"]
+                         ["prec","minterm","maxterm","errors","samples"])
+summarydf['errate']=summarydf["errors"]/summarydf["samples"]
 pd.options.display.float_format = '{:0.2%}'.format
 #summarydf.style.hide_index()
 summarydf.style.hide(axis='index')
