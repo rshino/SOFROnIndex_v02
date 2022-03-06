@@ -28,6 +28,7 @@ import urllib.request
 from datetime import datetime as dt, timedelta,date
 from dateutil.relativedelta import relativedelta
 from bs4 import BeautifulSoup
+#from html import HTML
 import math
 import os
 from jinja2 import Template
@@ -61,7 +62,8 @@ def fedQuery(rateCode, rateName,startDate,endDate):
   rates = soup.find_all(rateName)
   data = []
   for i in range(0,len(dates)):
-    rows = [dt.strptime(dates[i].get_text(),'%Y-%m-%d'),float(rates[i].get_text())]
+    rows = [dt.strptime(dates[i].get_text(),'%Y-%m-%d'),\
+            float(rates[i].get_text())]
     data.append(rows)
   df = pd.DataFrame(data,columns = ['date',rateName])
   df.set_index('date',inplace=True,drop=True)
@@ -114,10 +116,17 @@ def rateSOFRindex(alldf,d0,d1):
 
 # get data from Fed 
 # two queries because data ranges are different
-sofrdf=fedQuery(SOFR_ON_REQCODE,SOFR_ON,START_DATE_SOFR_ON,TODAY) # SOFR ON
-indexdf=fedQuery(SOFR_INDEX_REQCODE,SOFR_INDEX,START_DATE_SOFR_INDEX,TODAY) # SOFR Index
+sofrdf=fedQuery(SOFR_ON_REQCODE,\
+                SOFR_ON,\
+                START_DATE_SOFR_ON,\
+                TODAY) # SOFR ON
+indexdf=fedQuery(SOFR_INDEX_REQCODE,\
+                 SOFR_INDEX,\
+                 START_DATE_SOFR_INDEX,\
+                 TODAY) # SOFR Index
 # combine into single series
-alldf = pd.concat([sofrdf,indexdf],axis='columns',join='outer',ignore_index=False)
+alldf = pd.concat([sofrdf,indexdf],axis='columns',\
+                  join='outer',ignore_index=False)
 # add busday intervals between dates to series
 dates=alldf.index
 datelen=len(dates)
@@ -133,7 +142,7 @@ alldf['dailyAccrual']=(alldf[SOFR_ON]*alldf['days'])/(DAY_COUNT*100)+1.0
 
 
 TEST0=START_DATE_SOFR_INDEX
-TEST1=TODAY #dt(2020, 6, 30) #TODAY
+TEST1=dt(2020, 6, 30) #TODAY
 TEST1prevBD=dateShift(alldf,TEST1,FOLLOWING,-1)
 
 testdates=alldf.loc[START_DATE_SOFR_INDEX:TEST1].index # accrual 
@@ -153,34 +162,54 @@ for i in range(testlen):
     rows = [d0,d1,(d1-d0).days,rate_compounded,rate_index]
     results.append(rows)
     
-resultsdf = pd.DataFrame(results,columns = ['d0','d1','daysaccr','compounded','indexed'])
+resultsdf = pd.DataFrame(results,columns = \
+                         ['d0','d1','daysaccr','compounded','indexed'])
 
 outputfile='SOFROnIndex_error.csv'
-f=open(outputfile,"w")
-f.write(', '.join(["precision","min_term","max_term","errors","samples","error_rate"])+'\n')
+#f=open(outputfile,"w")
+#f.write(', '.join(["precision","min_term","max_term","errors","samples","error_rate"])+'\n')
 MAXTERM=9999
 critical_terms=np.array([1,3,6]) # months
 
-min_terms=np.round(np.append(0,np.append(np.append(0,critical_terms*253/12),critical_terms*253/12)),0)
-max_terms=np.round(np.append(MAXTERM,np.append(np.append(critical_terms*253/12,MAXTERM),critical_terms*253/12)),0)
+min_terms=np.round(np.append(0,np.append(np.append(\
+  0,critical_terms*253/12),critical_terms*253/12)),0)
+max_terms=np.round(np.append(MAXTERM,np.append(np.append(\
+  critical_terms*253/12,MAXTERM),critical_terms*253/12)),0)
 
+summary = []
 for precision in [ 3, 4, 5, 6 ]:
   for (min_term,max_term) in zip(min_terms,max_terms):
-    samples=len(resultsdf[ (((resultsdf['daysaccr']>min_term) & (resultsdf['daysaccr']<max_term)) | \
+    samples=len(resultsdf[ (((resultsdf['daysaccr']>min_term) & \
+                             (resultsdf['daysaccr']<max_term)) | \
                 (resultsdf['daysaccr']==max_term))])
     if(samples>0):
-      filtered = resultsdf[(round(resultsdf['compounded'],precision)!=round(resultsdf['indexed'],precision)) & \
+      filtered = resultsdf[(round(resultsdf['compounded'],precision)!=\
+                            round(resultsdf['indexed'],precision)) & \
         (((resultsdf['daysaccr']>min_term) & (resultsdf['daysaccr']<max_term)) | \
          (resultsdf['daysaccr']==max_term))]
       errors=len(filtered)
       pctfmt='{:.'+'{}'.format(precision-2)+'%}'
-      print('precision=',precision,'min_term=',min_term,'max_term=',max_term,'error=',errors,'/', \
-          samples,'=','{:.3%}'.format(errors/samples)) 
-      f.write(', '.join(['{}'.format(precision),'{}'.format(min_term),'{}'.format(max_term), \
-                       '{}'.format(errors),'{}'.format(samples),'{:.3%}'.format(errors/samples)])+'\n')
+      #print('precision=',precision,'min_term=',min_term,'max_term=',max_term,'error=',errors,'/', \
+      #    samples,'=','{:.3%}'.format(errors/samples)) 
+      row = [precision, int(min_term), int(max_term), int(errors), int(samples)]
+      summary.append(row)
+      
+      #f.write(', '.join(['{}'.format(precision),'{}'.format(min_term),'{}'.format(max_term), \
+      #                 '{}'.format(errors),'{}'.format(samples),'{:.3%}'.format(errors/samples)])+'\n')
     #f.write(', '.join([precision,min_accrued,errors,count,float(errors/count)]+'\n'))
 
-f.close()
+#f.close()
+
+summarydf = pd.DataFrame(summary,columns = \
+                         ["precision","min_term","max_term","errors","samples"])
+summarydf['errorrate']=summarydf["errors"]/summarydf["samples"]
+pd.options.display.float_format = '{:0.2%}'.format
+#summarydf.style.hide_index()
+summarydf.style.hide(axis='index')
+
+#print(summarydf)
+print(summarydf.to_string(index=False))
+
 
 pd.options.display.float_format = '{:0.10%}'.format
 resultsdf.style.format({  'd0': '{:%Y-%m-%d}',  'd1': '{:%Y-%m-%d}' }) #,  'daysaccr':'{:d}'})

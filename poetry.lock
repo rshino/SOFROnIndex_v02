@@ -25,6 +25,22 @@ python-versions = "*"
 beautifulsoup4 = "*"
 
 [[package]]
+name = "html"
+version = "1.16"
+description = "simple, elegant HTML, XHTML and XML generation"
+category = "main"
+optional = false
+python-versions = "*"
+
+[[package]]
+name = "html3"
+version = "1.18"
+description = "simple, elegant HTML, XHTML and XML generation for python3 (based on html)"
+category = "main"
+optional = false
+python-versions = ">=3.5"
+
+[[package]]
 name = "jinja2"
 version = "3.0.3"
 description = "A very fast and expressive template engine."
@@ -126,7 +142,7 @@ python-versions = ">=3.6"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8.0,<3.9"
-content-hash = "9901149b18eaa2ed075475ccf08e0c6689ba73ced64cb95ef439e223598ef913"
+content-hash = "3e8cee5d0f19c232f83d518e1d87dd8a11c7ef0080a96b18e6a6d6b4943bae39"
 
 [metadata.files]
 beautifulsoup4 = [
@@ -135,6 +151,13 @@ beautifulsoup4 = [
 ]
 bs4 = [
     {file = "bs4-0.0.1.tar.gz", hash = "sha256:36ecea1fd7cc5c0c6e4a1ff075df26d50da647b75376626cc186e2212886dd3a"},
+]
+html = [
+    {file = "html-1.16.tar.gz", hash = "sha256:ebc768f23b54a71350d731a75f2ef3a4a4dbdad9ae68d58b527664b66088e456"},
+]
+html3 = [
+    {file = "html3-1.18-py3-none-any.whl", hash = "sha256:83756c2af7e63b36e334c7581726ca955d054d7992948dea6abf57ec256c3a60"},
+    {file = "html3-1.18.tar.gz", hash = "sha256:b30e61398e6a7b424b2b0bcd9a3021830b37fdb3b231235b74defec010a4f587"},
 ]
 jinja2 = [
     {file = "Jinja2-3.0.3-py3-none-any.whl", hash = "sha256:077ce6014f7b40d03b47d1f1ca4b0fc8328a692bd284016f806ed0eaca390ad8"},

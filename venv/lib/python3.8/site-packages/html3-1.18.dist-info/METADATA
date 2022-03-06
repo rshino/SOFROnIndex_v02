@@ -1,0 +1,32 @@
+Metadata-Version: 2.1
+Name: html3
+Version: 1.18
+Summary: simple, elegant HTML, XHTML and XML generation for python3 (based on html)
+Home-page: http://pypi.python.org/pypi/html3
+Author: Pavel Liavonau
+Author-email: liavonlida@gmail.com
+License: UNKNOWN
+Project-URL: Source Code, https://github.com/pavelliavonau/html3/
+Keywords: html web
+Platform: UNKNOWN
+Classifier: Environment :: Web Environment
+Classifier: Intended Audience :: Developers
+Classifier: Programming Language :: Python :: 3
+Classifier: Topic :: Software Development :: Code Generators
+Classifier: Topic :: Software Development :: Libraries :: Python Modules
+Classifier: Topic :: Text Processing :: Markup :: HTML
+Classifier: License :: OSI Approved :: BSD License
+Requires-Python: >=3.5
+
+# This library based on html from https://pypi.org/project/html/
+
+For documentation please "pydoc html". The same documentation is available
+at http://pypi.python.org/pypi/html3
+
+To run its tests use "python -m html".
+
+To install under Python 3:
+
+% python3 setup.py build install
+
+
