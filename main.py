@@ -1,23 +1,9 @@
 #
 '''
-SOFR rates and index
-RNS20220213
+SOFR overnight rates and SOFR index
 
-Run 2/25/2022
-5 decimal precision (e.g., 1.234%)
-
-min 1-day accrual 
-count, errors, error_rate
-123753, 272, 0.22%
-
-min 21-day accrual 
-count, errors, error_rate
-114003, 88, 0.08%
-
-min 63-day accrual 
-count, errors, error_rate
-94830, 46, 0.05%
-
+Calculates accruals using both methods, compares results after rounding
+Compile error statistics
 '''
 
 
@@ -88,7 +74,10 @@ def dateShift(cal, base_date, match=0, shift=0):
   unique_index=pd.Index(cal.index)
   maxloc=len(cal)
   try:
-    loc=unique_index.get_loc(base_date,method=locdir)
+    #loc=unique_index.get_loc(base_date,method=locdir)
+    #print('loc=',loc)
+    loc=unique_index.get_indexer([base_date],method=locdir)[0]
+    #print('loca2=',loc2)
     #loc=max(min(loc+shift,maxloc),0)
     #print(loc)
     return unique_index[loc+shift]
@@ -112,9 +101,9 @@ def rateSOFRindex(alldf,d0,d1):
   rate_index = (accrual_index-1)*360/accrual_days
   return rate_index
   
-#### functions ####
+#### end functions ####
 
-# get data from Fed 
+# STEP 1. get data from Fed 
 # two queries because data ranges are different
 sofrdf=fedQuery(SOFR_ON_REQCODE,\
                 SOFR_ON,\
@@ -138,11 +127,13 @@ alldf['dailyAccrual']=(alldf[SOFR_ON]*alldf['days'])/(DAY_COUNT*100)+1.0
 
 ######################## setup complete #######################
 
+# STEP 2. calculate accruals
+# this can take some time, as it O(N^2)
+# where N is days between TEST0 and TEST1
+# adjust TEST0, TEST1 to shorten days for testing
 
-
-
-TEST0=START_DATE_SOFR_INDEX
-TEST1=dt(2020, 6, 30) #TODAY
+TEST0=START_DATE_SOFR_INDEX # beginning of test period
+TEST1=dt(2020, 6, 30) #TODAY   # end of test period 
 TEST1prevBD=dateShift(alldf,TEST1,FOLLOWING,-1)
 
 testdates=alldf.loc[START_DATE_SOFR_INDEX:TEST1].index # accrual 
@@ -151,7 +142,7 @@ testlen=len(testdates)
 minimum_accruredBD=1
 
 
-
+print('Generating all SOFR accruals from ',TEST0,' to ', TEST1)
 results = []
 for i in range(testlen):
   d0=testdates[i]
@@ -161,13 +152,18 @@ for i in range(testlen):
     rate_index=rateSOFRindex(alldf,d0,d1)
     rows = [d0,d1,(d1-d0).days,rate_compounded,rate_index]
     results.append(rows)
-    
+
 resultsdf = pd.DataFrame(results,columns = \
                          ['d0','d1','daysaccr','compounded','indexed'])
+# because there's typically too much data to print, we output raw unrounded results
+# to csv file for verification using excel or whatever...
+verify_output_file='allresults.csv'
+if (len(verify_output_file)>0):
+  pd.options.display.float_format = '{:0.10%}'.format
+  resultsdf.style.format({  'd0': '{:%Y-%m-%d}',  'd1': '{:%Y-%m-%d}' }) #,  'daysaccr':'{:d}'})
+  resultsdf.to_csv(path_or_buf=verify_output_file)
 
-outputfile='SOFROnIndex_error.csv'
-#f=open(outputfile,"w")
-#f.write(', '.join(["precision","min_term","max_term","errors","samples","error_rate"])+'\n')
+# STEP 3. compile and group differences
 MAXTERM=9999
 critical_terms=np.array([1,3,6]) # months
 
@@ -200,19 +196,13 @@ for precision in [ 3, 4, 5, 6 ]:
 
 #f.close()
 
+# STEP 4. output results
 summarydf = pd.DataFrame(summary,columns = \
                          ["prec","minterm","maxterm","errors","samples"])
 summarydf['errate']=summarydf["errors"]/summarydf["samples"]
 pd.options.display.float_format = '{:0.2%}'.format
-#summarydf.style.hide_index()
 summarydf.style.hide(axis='index')
 
-#print(summarydf)
 print(summarydf.to_string(index=False))
-
-
-pd.options.display.float_format = '{:0.10%}'.format
-resultsdf.style.format({  'd0': '{:%Y-%m-%d}',  'd1': '{:%Y-%m-%d}' }) #,  'daysaccr':'{:d}'})
-resultsdf.to_csv(path_or_buf='allresults.csv')
 
 print("END")
