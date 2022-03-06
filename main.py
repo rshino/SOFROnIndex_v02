@@ -19,9 +19,9 @@ import math
 import os
 from jinja2 import Template
 
-TODAY=date.today()
-START_DATE_SOFR_ON=dt(2018, 4, 2)
-START_DATE_SOFR_INDEX=dt(2020, 3, 2)
+TODAY=dt.now().date()
+START_DATE_SOFR_ON=dt(2018, 4, 2).date()
+START_DATE_SOFR_INDEX=dt(2020, 3, 2).date()
 DAY_COUNT=360
 # Fed data gleaned from XML links
 # https://www.newyorkfed.org/markets/reference-rates/sofr
@@ -113,6 +113,7 @@ indexdf=fedQuery(SOFR_INDEX_REQCODE,\
                  SOFR_INDEX,\
                  START_DATE_SOFR_INDEX,\
                  TODAY) # SOFR Index
+indexlen=len(indexdf)
 # combine into single series
 alldf = pd.concat([sofrdf,indexdf],axis='columns',\
                   join='outer',ignore_index=False)
@@ -125,15 +126,15 @@ alldf['days']=days # add days to df
 # calculate dailyAccrual 
 alldf['dailyAccrual']=(alldf[SOFR_ON]*alldf['days'])/(DAY_COUNT*100)+1.0
 
-######################## setup complete #######################
+#### setup complete, you can use alldf for all sorts of SOFR calculations #########
 
 # STEP 2. calculate accruals
-# this can take some time, as it O(N^2)
+# this can take some time, as it run O(N^2)
 # where N is days between TEST0 and TEST1
 # adjust TEST0, TEST1 to shorten days for testing
 
 TEST0=START_DATE_SOFR_INDEX # beginning of test period
-TEST1=dt(2020, 6, 30) #TODAY   # end of test period 
+TEST1=dt(2020, 6, 30).date() #TODAY   # end of test period set to TODAY for complete
 TEST1prevBD=dateShift(alldf,TEST1,FOLLOWING,-1)
 
 testdates=alldf.loc[START_DATE_SOFR_INDEX:TEST1].index # accrual 
@@ -141,8 +142,15 @@ testdates=alldf.loc[START_DATE_SOFR_INDEX:TEST1].index # accrual
 testlen=len(testdates)
 minimum_accruredBD=1
 
-
-print('Generating all SOFR accruals from ',TEST0,' to ', TEST1)
+print('Generating all SOFR accruals from ',TEST0,' to ', TEST1, ' (', testlen,' bus. days)')
+if(indexlen-testlen>0):
+  print('WARNING: Omitting ',indexlen-testlen,' bus. days from analysis,\n'
+        '  in code set \n'
+        '    TEST0=START_DATE_SOFR_INDEX and\n' 
+        '    TEST1=TODAY \n'
+        '  for complete range of accruals\n'
+        '  Doing so may dramatically increase run times'
+       )
 results = []
 for i in range(testlen):
   d0=testdates[i]
